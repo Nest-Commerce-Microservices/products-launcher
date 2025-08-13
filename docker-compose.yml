@@ -37,6 +37,7 @@ services:
       - DATABASE_URL=postgresql://postgres:123456@orders-db:5432/orders_db?schema=public
       - NATS_SERVERS=nats://nats-server:4222
 
+  # ORders DB
   orders-db:
     container_name: orders-database
     image: postgres:latest
@@ -49,3 +50,21 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 123456
       POSTGRES_DB: orders_db
+  # ===================================
+  # Payments Microservice
+  # ===================================
+  payments-ms:
+    container_name: payments-ms
+    build: ./payments-ms
+    volumes:
+      - ./payments-ms/src:/usr/src/app/src
+    command: pnpm run start:dev
+    ports:
+      - "${PAYMENTS_MS_PORT}:${PAYMENTS_MS_PORT}"
+    environment:
+      - PORT=${PAYMENTS_MS_PORT}
+      - NATS_SERVERS=nats://nats-server:4222
+      - STRIPE_SECRET=${PAYMENTS_MS_STRIPE_SECRET}
+      - STRIPE_WEBHOOK_SECRET=${PAYMENTS_MS_STRIPE_WEBHOOK_SECRET}
+      - STRIPE_SUCCESS_URL=${PAYMENTS_MS_STRIPE_SUCCESS_URL}
+      - STRIPE_CANCEL_URL=${PAYMENTS_MS_STRIPE_CANCEL_URL}
