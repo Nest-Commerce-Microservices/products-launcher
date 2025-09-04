@@ -1,8 +1,15 @@
 services:
+  # ===================================
+  # NATS SERVER
+  # ===================================
   nats-server:
     image: nats:latest
     ports:
       - "8222:8222" # NATS monitoring port Esta dentro de la red, no es necesario exponerlo
+
+  # ===================================
+  # CLIENT Gateway
+  # ===================================
   client-gateway:
     build: ./client-gateway
     ports:
@@ -13,6 +20,24 @@ services:
     environment:
       - PORT=3000
       - NATS_SERVERS=nats://nats-server:4222
+
+  # ===================================
+  # AUTH Microservice
+  # ===================================
+  auth-ms:
+    build: ./auth-ms
+    volumes:
+      - ./auth-ms/src:/usr/src/app/src
+    command: pnpm run start:dev
+    environment:
+      - PORT=3004
+      - NATS_SERVERS=nats://nats-server:4222
+      - DATABASE_URL=${AUTH_DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+
+  # ===================================
+  # PRODUCTS Microservice
+  # ===================================
   products-ms:
     build: ./products-ms
     ports:
@@ -25,6 +50,9 @@ services:
       - NATS_SERVERS=nats://nats-server:4222
       - DATABASE_URL=file:./dev.db
 
+  # ===================================
+  # ORDERS Microservice
+  # ===================================
   orders-ms:
     depends_on:
       - orders-db
@@ -37,7 +65,9 @@ services:
       - DATABASE_URL=postgresql://postgres:123456@orders-db:5432/orders_db?schema=public
       - NATS_SERVERS=nats://nats-server:4222
 
-  # ORders DB
+  # ===================================
+  # Orders database
+  # ===================================
   orders-db:
     container_name: orders-database
     image: postgres:latest
@@ -50,6 +80,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 123456
       POSTGRES_DB: orders_db
+
   # ===================================
   # Payments Microservice
   # ===================================
